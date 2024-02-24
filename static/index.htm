@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Interactive Flight Routes Visualization</title>
+    <link href="https://fonts.googleapis.com/css?family=Lato:400,700|Raleway:400,700" rel="stylesheet">
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    <style>
+        /* main */
+        #maps {
+            display: flex;
+            align-items: start;
+            height: 100%;
+            width: 100%;
+        }
+
+        #title {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-family: 'Lato', sans-serif;
+            margin-bottom: 20px;
+        }
+
+        .map_container {
+            flex: 1;
+            max-width: 50%;
+            display: inline-flex;
+            flex-direction: column;
+            margin: 0 15px;
+            position: relative;
+        }
+
+        #svg_map,
+        #svg_map2 {
+            max-width: 100%;
+            height: auto;
+            background: white;
+            margin-top: 20px;
+        }
+
+        /* route map */
+        #states1 {
+            fill: #001066;
+            stroke: grey;
+            stroke-width: 1px;
+        }
+
+        .link {
+            fill: none;
+            stroke-width: 1px;
+        }
+
+        .airports {
+            fill: white;
+            opacity: 0.6;
+        }
+
+        /* heat map */
+        #states2 {
+            fill: white;
+            stroke: grey;
+        }
+
+        /* slider */
+        #slider-box {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #heat_map_canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* texts */
+        #route_text,
+        #heat_text {
+            text-align: center;
+            margin-top: 10px;
+            font-family: 'Raleway', sans-serif;
+            font-size: 16px;
+        }
+
+        #airport-info {
+            display: none;
+            position: relative;
+            background: white;
+            border: 1px solid black;
+            padding: 10px;
+            pointer-events: none;
+            /* top: 1000px;
+              right: 20px;
+              width: 300px;  */
+        }
+
+        .gridlines line {
+            stroke: #D3D3D3;
+        }
+
+        a {
+            color: black;
+            text-decoration: none;
+            font-size: 16px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background-color: white;
+            transition: all 0.3s ease;
+            box-shadow: 2px 10px 10px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+
+</head>
+
+<body>
+
+
+
+
+    <div id="container">
+        <div id="map">
+            <div id="title">Routes of U.S. Flights Visualization</div>
+            <div id="maps">
+                <div id="route_map_container" class="map_container">
+                    <svg id="svg_map" class="svg_maps" height="600" width="960" style="background: white"></svg>
+                    <!-- <div id = "airport-info" height = "300" width = "400"style="background: white"></DIV> -->
+                    <span id="route_text">Click on the airport for detailed inspection</span>
+                    <div id="airport-info"
+                        style="display: none; position: absolute; background: white; border: 1px solid black; padding: 10px; pointer-events: none;">
+                    </div>
+
+                </div>
+                <div id="heat_map_container" class="map_container">
+                    <svg id="svg_map2" class="svg_maps" height="600" width="960" style="background: white"></svg>
+                    <canvas id="heat_map_canvas" height="600" width="960"></canvas>
+                    <span id="heat_text">Inspect the Heat Map</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="slider-box">
+        <div>Year</div>
+        <input id="slider" type="range" min="1990" max="2009" value="1990" step="1">
+        <span id="range">2000</span>
+        <div class="center">Move the slider to inspect the data from 1990 - 2009</div>
+    </div>
+    <p style="padding-left: 50px; padding-right: 50px; padding-bottom: 50px;">
+        In the early 1990s, major hubs such as Atlanta (ATL), Chicago O'Hare (ORD), Dallas/Fort Worth (DFW), and New
+        York's JFK saw considerable traffic, serving as key nodes for both domestic and international flights. New
+        routes added during this period primarily expanded from these hubs, focusing on connecting major cities across
+        the U.S. <br>
+
+        In the mid 1990s, Cities like Denver (DEN), Phoenix (PHX), and Philadelphia (PHL) saw an increase in routes,
+        particularly from airlines looking to expand their footprint. <br>
+
+        After 9/11, as the industry recovered, there was a shift towards enhancing connectivity from mid-sized airports,
+        adding routes from the southwest (ex. Las Vegas)
+
+    </p>
+
+
+    <div style="display: flex;">
+        <div>
+            <h4 style="text-align: center;">Revenue Passenger Miles (RPM) vs. the growth rate of GDP </h4>
+
+            <svg id="linechart" width="900" height="450"></svg>
+        </div>
+        <div>
+
+            <p style="padding-top: 30px;">
+                The aviation industry grew rapidly during 1900 to 2009. Not only was the increased traffic a result of
+                the
+                aviation technology advancement, but also a vital indication of global and domestic economic
+                development.
+                This chart looks at the growth rate of the Revenue Passenger Miles (RPM) vs. the growth rate of GDP from
+                2000 to 2009. RPM is calculated by multiplying the number of paying passengers by the distance
+                travelled, an
+                important indicator for traffic volume. <br> <br>
+
+                Over the two decades, the RPM growth rate is consistently above 0, except for the year of 2001 and the
+                year
+                of 2008 to 2009. The consistent RPM growth can be attributed to economic growth, globalization and
+                advancement in aviation technology. The GDP growth rate is consistently above 4% during that period,
+                boosting business travel and individuals’ disposable income, allowing more people to spend on leisure
+                activities. On the other end, GDP growth boosts international trade and necessity for travel. In
+                addition,
+                advancement in aviation technology also improves aircraft efficiency, encourages more people to travel.
+                <br><br>
+
+                The terrorist attack on 9/11 had an immediate profound impact on air travel. Fears of travel led to a
+                significance drop in air travel demand, resulting in a -6% growth rate in RPM in 2001. On the other
+                hand,
+                the Financial Crisis that began in 2008 contributed to the declining air traffic in 2008. The economic
+                recession, indicated by the negative GDP growth rate forces people to cut back on travel expenses,
+                resulting
+                in negative RPM growth.
+
+            </p>
+        </div>
+
+    </div>
+    <div style="display: flex;justify-content: center; margin: 30px;">
+
+        <a href="calendar2.html">Go to calendar to see changes of most popular airports in each months</a>
+    </div>
+
+    <script>
+        const svg_map = d3.select("#svg_map")
+        const svg_map2 = d3.select("#svg_map2")
+        const width_map = svg_map.attr("width") / 1.5
+        const height_map = svg_map.attr("height") / 1.5
+        const margin_map = { top: 20, right: 20, bottom: 20, left: 20 }
+
+        const json_map = svg_map.append("g")
+        // .attr("transform","translate(" + margin_map.left + "," + margin_map.top + ")");
+        const json_map2 = svg_map2.append("g")
+        // .attr("transform","translate(" + margin_map.left + "," + margin_map.top + ")");
+        const route_map = svg_map.append("g")
+        // .attr("transform","translate(" + margin_map.left + "," + margin_map.top + ")");
+
+
+        async function requestData() {
+            const data = await d3.csv("data/unique_route_yearly.csv");
+            const top15Data = await d3.csv("data/top_15_airport.csv");
+            // drawCircles(document.getElementById("slider").value);
+            const json = await d3.json("data/states.json");
+            const states = topojson.feature(json, json.objects.states);
+            var projection = d3.geoAlbersUsa().fitSize([width_map, height_map], states);
+            var path = d3.geoPath().projection(projection);
+            data.forEach(d => {
+                d.Position = projection([parseFloat(d.Org_airport_long), parseFloat(d.Org_airport_lat)]);
+            });
+
+            async function drawBaseMap() {
+                json_map.selectAll("path.states")
+                    .data(states.features)
+                    .join("path")
+                    .attr("class", "states")
+                    .attr("id", "states1")
+                    .attr("d", path);
+
+                json_map2.selectAll("path.states")
+                    .data(states.features)
+                    .join("path")
+                    .attr("class", "states")
+                    .attr("id", "states2")
+                    .attr("d", path);
+            }
+
+
+            async function updateRoute(selectedYear) {
+                const filteredData = data.filter(d => +d.year === selectedYear);
+                const links = filteredData.map(d => {
+                    const source = projection([+d.Org_airport_long, +d.Org_airport_lat]);
+                    const target = projection([+d.Dest_airport_long, +d.Dest_airport_lat]);
+                    if (!source || !target) {
+                        return null;
+                    }
+                    return {
+                        type: "LineString",
+                        coordinates: [source, target],
+                        isNew: d["Route_Present_Previous_Year"] === "False"
+                    };
+                }).filter(d => d !== null);
+
+                const paths = route_map.selectAll(".link").data(links, d => d.coordinates.join("-"));
+                paths.enter()
+                    .append("path")
+                    .attr("class", "link")
+                    .merge(paths)
+                    .attr("d", d => {
+                        const cx = (d.coordinates[0][0] + d.coordinates[1][0]) / 2;
+                        const cy = (d.coordinates[0][1] + d.coordinates[1][1]) / 2 - 30; // bend links
+                        return `M${d.coordinates[0][0]},${d.coordinates[0][1]} Q${cx},${cy} ${d.coordinates[1][0]},${d.coordinates[1][1]}`;
+                    })
+                    .style("stroke", d => d.isNew ? "red" : "yellow")
+                    .style("stroke-width", d => d.isNew ? 0.6 : 0.2)
+                    .style("stroke-opacity", d => d.isNew ? 1 : 0.5);
+
+                paths.exit().remove();
+
+            }
+
+
+            let debounceTimeout;
+            document.getElementById("slider").addEventListener("input", function () {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(async () => {
+                    const selectedYear = +this.value;
+                    document.getElementById("range").textContent = selectedYear;
+                    await updateRoute(selectedYear);
+                    await updateHeat(selectedYear);
+                    await highlightTop15(selectedYear, top15Data);
+                    // await drawCircles(selectedYear, top15Data);
+                    // await drawCircles(selectedYear);
+                }, 250); // Adjust debounce time as needed
+            });
+
+
+            async function drawCircles() {
+                route_map.selectAll("circle.airports")
+                    .data(data)
+                    .enter()
+                    .append("circle")
+                    .attr("class", "airports")
+                    .attr("cx", d => d.Position ? d.Position[0] : 0)
+                    .attr("cy", d => d.Position ? d.Position[1] : 0)
+                    .attr("r", 2)
+                    .style("opacity", 0.05)
+                    .style("fill", "white");
+            }
+
+
+            ////////////////////////////////
+
+            const traffic = await d3.csv("data/traffic_ranked.csv");
+
+            // let minTraffic, maxTraffic, colorScale;
+
+            const minTraffic = d3.min(traffic, d => +d.Traffic);
+            const maxTraffic = d3.max(traffic, d => +d.Traffic);
+            // console.log(maxTraffic)
+
+            const colorScale2 = d3.scaleLog()
+                // .domain([Math.max(1, minTraffic), Math.sqrt(minTraffic * maxTraffic), maxTraffic])
+                .domain([Math.max(1, minTraffic), (minTraffic + maxTraffic) / 2, maxTraffic])
+                // .domain([Math.max(1, minTraffic), maxTraffic])
+                .range(["Green", "Yellow", "Red"]);
+
+            //   function updateCanvasSize() {
+            //   const container = document.getElementById('heat_map_container'); // Adjust the ID as necessary
+            //   // Here we take the width of the container and subtract any margins/padding
+            //   const width = container.offsetWidth;
+            //   const height = width * 0.5; // Maintain aspect ratio, change as necessary
+            //
+            //   const canvas = document.getElementById('heat_map_canvas');
+            //   canvas.style.width = width + 'px';
+            //   canvas.style.height = height + 'px';
+            //   canvas.width = width * window.devicePixelRatio; // Adjust for device pixel ratio
+            //   canvas.height = height * window.devicePixelRatio;
+            // }
+
+
+            async function updateHeat(selectedYear) {
+
+
+                const filteredTraffic = traffic.filter(d => +d.year === selectedYear);
+                const canvas = document.getElementById('heat_map_canvas');
+                const context = canvas.getContext('2d')
+                const scale = window.devicePixelRatio;
+                canvas.width = width_map * scale;
+                canvas.height = height_map * scale;
+                canvas.style.width = width_map + 'px';
+                canvas.style.height = height_map + 'px';
+                const ctx = canvas.getContext('2d');
+                const translateX = 0;
+                const translateY = 20;
+                ctx.translate(translateX, translateY);
+
+                const drawingScale = 1; // Example scale factor for drawing
+                ctx.scale(drawingScale, drawingScale);
+
+                // updateCanvasSize();
+                // const canvas = document.getElementById('heat_map_canvas');
+                // const context = canvas.getContext('2d');
+
+                context.clearRect(0, 0, canvas.width, canvas.height);
+
+                const projection_heat = d3.geoAlbersUsa().fitSize([canvas.width, canvas.height], states); // Use full logical size for projection fitting
+                const path_heat = d3.geoPath().projection(projection_heat).context(ctx);
+
+
+
+
+                context.beginPath();
+                states.features.forEach((feature) => {
+                    path_heat(feature);
+                });
+                context.clip();
+
+                function drawHeat() {
+                    filteredTraffic.forEach(function (d) {
+                        const airport = projection([+d.Airport_Long, +d.Airport_Lat]);
+                        // console.log(airport)
+                        if (airport) {
+                            const x = airport[0];
+                            const y = airport[1];
+
+                            const trafficColor = colorScale2(+d.Traffic);
+                            const opacity = 0.01;
+                            const rgbaTrafficColor = trafficColor.replace('rgb', 'rgba').replace(')', `, ${opacity})`);
+
+                            // const radius = Math.pow(+d.Traffic, 1/4)+ 50;
+                            const radius = Math.sqrt(d.Traffic) * 0.02;
+                            const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
+                            gradient.addColorStop(0, trafficColor);
+                            // gradient.addColorStop(1, trafficColor);
+                            gradient.addColorStop(1, rgbaTrafficColor);
+                            // gradient.addColorStop(1,'rgba(255, 255, 255, 0)');
+
+
+
+                            context.fillStyle = gradient;
+                            context.beginPath();
+                            context.arc(x, y, radius, 0, 2 * Math.PI);
+                            context.fill();
+
+                        }
+                    });
+                }
+                drawHeat();
+            }
+
+            window.addEventListener('resize', () => {
+                updateHeat(+document.getElementById("slider").value);
+            });
+
+            async function highlightTop15(selectedYear, top15Data) {
+
+                const filteredTop15 = top15Data.filter(d => +d.year === selectedYear);
+                console.log(filteredTop15)
+
+                // Reset previous highlightand text
+                route_map.selectAll("circle.airports").style("opacity", 0.6).style("fill", "white");
+                route_map.selectAll("text.airport-name").remove();
+
+                // Highlight top 15 airports
+                filteredTop15.forEach(d => {
+                    const airportPos = projection([+d.longitude, +d.latitude]);
+                    if (airportPos) {
+                        route_map.append("text")
+                            .attr("class", "airport-name")
+                            .attr("x", airportPos[0])
+                            .attr("y", airportPos[1] - 10)
+                            .text(d.airport)
+                            .attr("text-anchor", "middle")
+                            .style("font-size", "10px")
+                            .style("fill", "white");
+
+
+                        route_map.append("circle")
+                            // .filter(airport => filteredTop15.airport === filteredTop15.airport)
+                            .attr("class", "airports")
+                            .attr("cx", airportPos[0])
+                            .attr("cy", airportPos[1])
+                            .attr("r", 4)
+                            .style("opacity", 1)
+                            .style("fill", "white") // Or any highlight color
+                            .on("click",
+                                () => {
+                                    // circle
+                                    //     .style("fill", "yellow") // Highlight color
+                                    //     .attr("r", 10);
+                                    // Populate and display the airport-info div on click
+                                    document.getElementById("airport-info").innerHTML = `
+                       <strong>Airport:</strong> ${d.airport}<br>
+                       <strong>City:</strong> ${d.city}<br>
+                       <strong>Year:</strong> ${d.year}<br>
+                       <strong>Latitude:</strong> ${d.latitude}<br>
+                       <strong>Longitude:</strong> ${d.longitude}`;
+                                    document.getElementById("airport-info").style.display = "block";
+                                });
+
+
+                    }
+                });
+
+
+            }
+
+
+
+
+
+
+            ////////////////////////////////
+
+
+            drawBaseMap().then(() => {
+                updateRoute(+document.getElementById("slider").value)
+                updateHeat(+document.getElementById("slider").value)
+                // drawCircles(+document.getElementById("slider").value)
+                // drawCircles()
+            });
+
+        }
+        requestData();
+
+
+    </script>
+
+    <script>
+        const svg = d3.select("#linechart");
+        const width = svg.attr("width");
+        const height = svg.attr("height");
+        const margin = { top: 80, right: 120, bottom: 50, left: 100 };
+        const chartWidth = width - margin.left - margin.right;
+        const chartHeight = height - margin.top - margin.bottom;
+        const events = [
+            { year: 2001, description: "9/11", detail: "9/11: A series of four coordinated terrorist attacks by the Islamic terrorist group al-Qaeda against the United States." },
+            { year: 2008, description: "Financial Crisis", detail: "Financial Crisis: A major worldwide economic crisis that led to the Great Recession." },
+            { year: 2003, description: "SARS" }
+        ];
+
+        let annotations = svg.append("g").attr("id", "annotations");
+        let chartArea = svg.append("g").attr("id", "points").attr("transform", `translate(${margin.left},${margin.top})`);
+
+        d3.csv("data/data_20yr.csv").then((data) => {
+
+            const yScale = d3.scaleLinear().domain([-5, 10]).range([chartHeight, 0]);
+            let leftAxis = d3.axisLeft(yScale).tickFormat(d => `${d}%`);
+            let leftGridlines = d3.axisLeft(yScale)
+                .tickSize(-chartWidth - 10)
+                .tickFormat("");
+            annotations.append("g")
+                .attr("class", "y axis")
+                .attr("transform", `translate(${margin.left - 10},${margin.top})`)
+                .call(leftAxis);
+
+            annotations.append("g")
+                .attr("class", "y gridlines")
+                .attr("transform", `translate(${margin.left - 10},${margin.top})`)
+                .call(leftGridlines);
+
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("x", -chartHeight / 2)
+                .attr("y", -margin.top + 90)
+                .style("text-anchor", "middle")
+                .style("font-size", "15px")
+                .text("Growth Rate");
+
+            // x axis
+
+            const dateScale = d3.scaleLinear().domain([1990, 2009]).range([0, chartWidth]);
+            let bottomAxis = d3.axisBottom(dateScale).tickFormat(d3.format("d"));
+            let bottomGridlines = d3.axisBottom(dateScale)
+                .tickSize(-chartHeight - 10)
+                .tickFormat("")
+            annotations.append("g")
+                .attr("class", "x axis")
+                .attr("transform", `translate(${margin.left},${chartHeight + margin.top + 10})`)
+                .call(bottomAxis);
+            annotations.append("g")
+                .attr("class", "x gridlines")
+                .attr("transform", `translate(${margin.left},${chartHeight + margin.top + 10})`)
+                .call(bottomGridlines);
+            svg.append("text")
+                .attr("transform", "translate(" + (chartWidth / 2 + 40) + "," + (chartHeight + margin.top + 40) + ")")
+                .style("text-anchor", "middle")
+                .style("font-size", "15px")
+                .text("Year")
+
+            const legendData = [
+                { label: "GDP Growth", color: "blue" },
+                { label: "RPM Growth", color: "red" }
+            ];
+
+            // Create a legend group
+            const legend = svg.append("g")
+                .attr("class", "legend")
+                .attr("transform", `translate(${width - margin.right + 10}, ${margin.top})`); // Adjust as needed
+
+
+            var lineGen = d3.line()
+                .x(d => dateScale(d['year']))
+                .y(d => yScale(d.gdp_growth));
+
+            var lineGen_rpk = d3.line()
+                .x(d => dateScale(d['year']))
+                .y(d => yScale(d.rpk_growth));
+
+
+            let gTag = chartArea.append("g").attr("class", "line-gdp");
+            let gTag_rpk = chartArea.append("g").attr("class", "line-rpk");
+
+            gTag.append("path")
+                .datum(data)
+                .attr("fill", "none")
+                .attr("stroke", "blue")
+                .attr("stroke-width", "2px")
+                .attr("d", lineGen);
+
+            gTag_rpk.append("path")
+                .datum(data)
+                .attr("fill", "none")
+                .attr("stroke", "red")
+                .attr("stroke-width", "2px")
+                .attr("d", lineGen_rpk);
+
+            gTag.selectAll("circle")
+                .data(data)
+                .join('circle')
+                .attr("cx", d => dateScale(d.year))
+                .attr("cy", d => yScale(d.gdp_growth))
+                .attr("r", "2px")
+                .attr("fill", "blue");
+
+            events.forEach(event => {
+                let line = chartArea.append("line")
+                    .attr("x1", dateScale(event.year))
+                    .attr("y1", 0)
+                    .attr("x2", dateScale(event.year))
+                    .attr("y2", chartHeight)
+                    .attr("x3", dateScale(event.year))
+                    .attr("y3", chartHeight)
+                    .attr("stroke", "black")
+                    .attr("stroke-width", 2)
+                    .attr("stroke-dasharray", "5,5")
+                    .style("cursor", "pointer"); // Change cursor to pointer on hover to indicate interactivity
+
+                // Append text labels for each event
+                chartArea.append("text")
+                    .attr("x", dateScale(event.year))
+                    .attr("y", -5)
+                    .attr("text-anchor", "middle")
+                    .text(event.description)
+                    .style("font-size", "12px");
+
+                line.on("click", () => {
+                    d3.select("#event-details")
+                        .style("display", "block")
+                        .html(`<strong>${event.description}</strong><br/>${event.detail}`);
+                });
+            });
+
+            legend.selectAll("rect")
+                .data(legendData)
+                .enter().append("rect")
+                .attr("x", 0)
+                .attr("y", (d, i) => i * 20) // Offset each legend item vertically
+                .attr("width", 10)
+                .attr("height", 10)
+                .style("fill", d => d.color);
+
+            // Append text labels to legend
+            legend.selectAll("text")
+                .data(legendData)
+                .enter().append("text")
+                .attr("x", 15)
+                .attr("y", (d, i) => i * 20 + 9) // Vertically align text with rectangles
+                .text(d => d.label)
+                .style("font-size", "12px")
+                .attr("text-anchor", "start")
+                .style("alignment-baseline", "middle");
+
+        });
+    </script>
+
+</body>
+
+</html>

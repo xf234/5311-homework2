@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horizontal Calendar</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    rect {
+      stroke: #fff;
+      rx: 5px;
+      ry: 5px;
+    }
+
+    line {
+      stroke: #fff;
+      stroke-width: 2px;
+    }
+
+    text {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+    }
+
+    #wrap3,
+    #wrap4,
+    #wrap5 {
+      display: none;
+    }
+
+    a {
+      color: black; 
+      text-decoration: none; 
+      font-size: 16px; 
+      padding: 5px 10px; 
+      border-radius: 5px; 
+      background-color: white; 
+      transition: all 0.3s ease; 
+      box-shadow: 2px 10px 10px rgba(0, 0, 0, 0.2);
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <div style="padding-top: 10px;">
+    
+      <a href="index.htm">Go back</a>
+
+  </div>
+  <div style="display: flex;">
+    <div>
+      <h4>Passengers of all the airports</h4>
+      <svg id="calendar1" width="400" height="480"></svg>
+    </div>
+
+    <div style="width: 800px;" >
+      <div style="margin-left: 250px; margin-top: 30px; margin-bottom: 20px;">
+        <select id="calendarSelector" >
+          <option value="wrap2">Hartsfield-Jackson Atlanta International Airport (ATL)</option>
+          <option value="wrap3">Chicago O'Hare International Airport(ORD)</option>
+          <option value="wrap4">Orlando International Airport (MCO)</option>
+          <option value="wrap5">John F. Kennedy International Airport(JFK)</option>
+        </select>
+      </div>
+
+
+      <div style="margin-left: 220px;" id="wrap2">
+        <!-- <h5>ATL: the airport with the most passengers</h5> -->
+        <svg id="calendar2" width="400" height="480"></svg>
+        <p>
+          Hartsfield-Jackson Atlanta International Airport (ATL) is renowned for being one of the world's busiest
+          airports by passenger volume and flight operations. Located in Atlanta, Georgia, it serves as a primary hub
+          for domestic and international air travel and is a key connecting point due to its strategic position in the
+          southeastern United States. In addition, ATL is a major hub for Delta Airline, ensuring a steady flow of
+          connecting passengers.
+          <br>
+          Overall, there is not much fluctuation in flight traffic throughout the decade and throughout the year. There
+          is a slight decrease in winter which can be attributed to the winter weather.
+            <br>
+          Fun Fact: there is a 5K race held every year on one of the runway.
+
+            <br>         Reference:
+          https://www.businessinsider.com/atlanta-airport-facts-busiest-in-world-2019-5
+
+        </p>
+
+      </div>
+
+      <div style="margin-left: 220px;" id="wrap3">
+        <!-- <h5>ORD: the airport with the most flights</h5> -->
+        <svg id="calendar3" width="400" height="480"></svg>
+        <p>
+          Chicago O’Hare Airports (ORD), located in Chicago, Illinois, is the airport with the most flights in the
+          United States, attributing to its strategic geographical location in the US, serving as a major job for
+          connecting flights between the eastern and western parts of the country. In addition, the airport is the major
+          hub both American Airlines and United Airlines, significantly contributing to its high volume of flights.
+          <br>
+          Looking at the flight pattern calendar from 2000 to 2009, it seems that the number of passengers decreased
+          significantly during the winter, consistent with the general trend observed in other airports. That is part
+          due to the harsh winter weather with snowstorm, and decrease in leisure travel after holiday season.
+          <br>
+          In addition, there is a traffic peak observed in 2004 and 2005. Consistent. This is consistent with the surge
+          in air travel in the early 2000s as there were significant advancement in aviation technology. As traffic
+          increased, delays and safety concerns arises. The Federal Aviation Administration initiated the “Operating
+          Limitations at Chicago O’Hare Airport” which put caps and restrictions on airline operations, resulting in the
+          decline of air traffic.
+
+        </p>
+      </div>
+
+
+
+      <div style="margin-left: 220px;" id="wrap4">
+        <!-- <h5>MCO: the airport in a travelling city</h5> -->
+        <svg id="calendar4" width="400" height="480"></svg>
+        <p>
+          Orlando International Airport (MCO) is the primary public airport located near Orlando, Florida.
+
+          Unlike other airports with significant fluctuations in air traffic due to seasonal weather, MCO’s traffic
+          patterns are most stable throughout the year. This is largely attributed to Florida being a year-round tourist
+          destination. The city’s warm climate and appeal as a vacation spot ensures a steady flow of travelers
+          throughout the years. There is a slight increase in air traffic for March and April, which might be attributed
+          to spring break, a popular travel time for families and college students.
+
+        </p>
+      </div>
+
+      <div style="margin-left: 220px;" id="wrap5" >
+        <!-- <h5>JFK: the airport in NYC</h5> -->
+        <svg id="calendar5" width="400" height="480"></svg>
+        <p>
+          John F. Kennedy International Airport (JFK), located in New York City, is one of the busiest airport in the
+          United States, and the busiest international air passenger gateway into North America.
+
+          Unlike Chicago O’Hare Airport, JFK saw its traffic peak in 2007 and 2008. Following the global economic boom
+          in mid-2000s, there is an expansion of international airlines alliances and addition of new routes,
+          contributing to the increased traffic at JFK, an airport with strong international focus. In addition, the
+          introduction of Airbus A380, which many airlines deployed on long-haul routes to JFK, also boosted passenger
+          number significantly. The slow growth in the early 2000s can also be attributed to the aftermath of 9/11,
+          instilling a sense of fear of the general public.
+
+
+        </p>
+      </div>
+
+
+
+    </div>
+
+  </div>
+
+  <script>
+
+    const requestData = async function () {
+      const sum_psgr = await d3.json("data/sum_psgr_all.json", d3.autoType);
+      console.log(sum_psgr);
+      const atl_psgr = await d3.json("data/most_psgr_atl.json", d3.autoType);
+      console.log(atl_psgr);
+      const most_flight = await d3.json("data/most_flights_ord.json", d3.autoType);
+      console.log(most_flight);
+      const mco_psgr = await d3.json("data/travel_psgr_mco.json", d3.autoType);
+      console.log(mco_psgr);
+      const jfk_psgr = await d3.json("data/normal_psgr_jfk.json", d3.autoType);
+      console.log(jfk_psgr);
+
+      const ord_text = ""
+
+
+      display_calendar(sum_psgr, "red", "svg#calendar1", 3, 9, 2005, 2008, "busiest time period");
+      display_calendar(atl_psgr, "#FF9234", "svg#calendar2", 6, 9, 2004, 2009, "busiest time period");
+      display_calendar(most_flight, "green", "svg#calendar3", 3, 9, 2004, 2005, "busiest time period");
+      display_calendar(mco_psgr, "#22C7A9", "svg#calendar4", 9, 10, 2000, 2009, "least busiest period");
+      display_calendar(jfk_psgr, "purple", "svg#calendar5", 5, 9, 2007, 2009, "busiest time period, from 00-09, become busier");
+    }
+
+    requestData();
+
+
+    function display_calendar(data, color, cldr, month_start, month_end, year_start, year_end, thoughts) {
+      const svgCalendar = d3.select(cldr);
+
+      const width = svgCalendar.attr("width");
+      const height = svgCalendar.attr("height");
+      const margin = { top: 15, right: 20, bottom: 20, left: 20 };
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+
+
+      const years_cldr = data.map(d => d.year);
+      console.log(years_cldr);
+
+      const months = d3.range(12);
+
+      const yearScale = d3.scaleBand()
+        .domain(years_cldr)
+        .range([margin.left, innerWidth]);
+
+      const monthScale = d3.scaleBand()
+        .domain(months)
+        .range([margin.top, innerHeight]);
+
+
+      const psgr_mon_Extent = findMonthExtent(data);
+      console.log(psgr_mon_Extent);
+
+      const colorScale = d3.scaleLinear()
+        .domain(psgr_mon_Extent)
+        .range(["white", color]);
+
+      svgCalendar.selectAll("rect")
+        .data(data)
+        .enter()
+        .append("g")
+        .attr("transform", d => `translate(${yearScale(+d.year) + margin.left}, ${margin.top})`)
+        .selectAll("rect")
+        .data(d => months.map(month => ({ year: d.year, month: month, value: +d.months[month] })))
+        .enter()
+        .append("rect")
+        .attr("x", 0)
+        .attr("y", d => monthScale(d.month))
+        .attr("width", monthScale.bandwidth())
+        .attr("height", monthScale.bandwidth())
+        .attr("fill", d => colorScale(d.value))
+        .on("mouseover", show_interactive)
+        .on("mouseout", function (event, d) {
+          d3.select("#tooltip").remove();
+          d3.select("#insights").remove();
+          // d3.select("#select_border").remove();
+        });
+
+      svgCalendar.append("g")
+        .selectAll("line")
+        .data(years_cldr)
+        .enter()
+        .append("line")
+        .attr("x1", d => yearScale(d) + margin.left)
+        .attr("y1", margin.top)
+        .attr("x2", d => yearScale(d) + margin.left)
+        .attr("y2", innerHeight + margin.top)
+        .attr("stroke", "#fff");
+
+      svgCalendar.append("g")
+        .selectAll("line")
+        .data(months)
+        .enter()
+        .append("line")
+        .attr("x1", margin.left)
+        .attr("y1", d => monthScale(d) + margin.top)
+        .attr("x2", innerWidth + margin.left)
+        .attr("y2", d => monthScale(d) + margin.top)
+        .attr("stroke", "#fff");
+
+      svgCalendar.append("g")
+        .selectAll("text")
+        .data(years_cldr)
+        .enter()
+        .append("text")
+        .text(d => d)
+        .attr("x", d => yearScale(d) + margin.left + yearScale.bandwidth() / 2)
+        .attr("y", margin.top / 2)
+        .attr("text-anchor", "middle")
+        .attr("alignment-baseline", "middle")
+        .style("font-size", "10px");
+
+      svgCalendar.append("g")
+        .selectAll("text")
+        .data(months)
+        .enter()
+        .append("text")
+        .text(d => {
+          const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          return monthNames[d];
+        })
+        .attr("x", margin.left / 2)
+        .attr("y", d => monthScale(d) + margin.top + monthScale.bandwidth() / 2)
+        .style("font-size", "10px");
+
+      const rectBorder = svgCalendar.append("rect")
+        .attr("id", "select_border")
+        .attr("x", yearScale(year_start) + margin.left)
+        .attr("y", monthScale(month_start - 1) + margin.top)
+        .attr("width", yearScale.bandwidth() * (year_end - year_start + 1))
+        .attr("height", monthScale(month_end) - monthScale(month_start))
+        .attr("fill", "none")
+        .style("stroke", "black")
+        .attr("stroke-width", 2)
+        .attr("pointer-events", "none");
+
+
+
+
+      document.getElementById('calendarSelector').addEventListener('change', function () {
+        const selectedDivId = this.value;
+        const divContainers = document.querySelectorAll('div[id^="wrap"]');
+
+        divContainers.forEach(divContainer => {
+          if (divContainer.id === selectedDivId) {
+            divContainer.style.display = 'block';
+          } else {
+            divContainer.style.display = 'none';
+          }
+        });
+      });
+
+      function show_interactive(event, d) {
+
+        const xPosition = parseFloat(d3.select(this).attr("x")) + yearScale.bandwidth() / 2 + margin.left;
+        const yPosition = innerHeight + margin.top + 15;
+
+
+        if (d.month >= month_start - 1 && d.month <= month_end && d.year >= year_start && d.year <= year_end) {
+          // console.log(d, "in");
+
+
+          svgCalendar.append("text")
+            .attr("id", "insights")
+            .attr("x", width / 2)
+            .attr("y", height - 10)
+            .attr("text-anchor", "middle")
+            .attr("font-family", "sans-serif")
+            .attr("font-size", "14px")
+            .attr("fill", "black")
+            .text(thoughts);
+        }
+
+        svgCalendar.append("text")
+          .attr("id", "tooltip")
+          .attr("x", xPosition)
+          .attr("y", yPosition)
+          .attr("text-anchor", "middle")
+          .attr("font-family", "sans-serif")
+          .attr("font-size", "12px")
+          .attr("fill", "black")
+          .text(d.value);
+
+      }
+    }
+
+
+    function findMonthExtent(data) {
+      let minPassenger = Infinity;
+      let maxPassenger = -Infinity;
+
+      data.forEach(yearData => {
+
+        yearData.months.forEach(passengers => {
+
+          if (passengers < minPassenger) {
+            minPassenger = passengers;
+          }
+          if (passengers > maxPassenger) {
+            maxPassenger = passengers;
+          }
+        });
+      });
+
+      return [minPassenger, maxPassenger];
+    }
+
+  </script>
+</body>
+
+</html>
